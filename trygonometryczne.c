@@ -8,12 +8,8 @@ void make_spl(points_t *pts, spline_t *spl) {
     double *Y = pts->y;
 
 
-    //tu będzie gradient descent
-    //tak z 1000 iteracji powinno na początek wystarczyć
-    //wyniki funkcji błędu doda się do jakiegoś wektorka wraz z użytą theta
-    //weźmie się theta dla której błąd był najmniejszy
-    //jak już wyjdzie theta (parametry), to obliczamy dla 10 podpunktów
-    //wartość funkcji i 3 jej pochodnych
+    //jednak nie będzie gradient descent
+    //trzeba będzie wyzerowac pochodne i podać to do rozwiązania solverowi
 
 }
 
