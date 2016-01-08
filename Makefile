@@ -19,5 +19,5 @@ clean:
 	-rm *.o aprox intrp prosta
 
 test: trygonometryczne.c
-	$(CC) trygonometryczne.c gaus/matrix.c points.c splines.c
+	$(CC) trygonometryczne.c gaus/matrix.c points.c splines.c gaus/pivot.c gaus/piv_ge_solver.c
 	./a.out
