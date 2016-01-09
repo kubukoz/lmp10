@@ -1,5 +1,4 @@
 #include "makespl.h"
-#include <float.h>
 #include "gaus/matrix.h"
 #include <math.h>
 #include <stdlib.h>
