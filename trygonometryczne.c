@@ -4,40 +4,37 @@
 #include <stdlib.h>
 #include "gaus/piv_ge_solver.h"
 
-#ifndef APPROX_BASE_SIZE
-#define APPROX_BASE_SIZE 4;
-#endif
+#define DEFAULT_PARTS 5;
 
-double diff_sin(double x, int n) {
-    return sin(n * x);
-}
-
-double diff_cos(double x, int n) {
-    return cos(n * x);
+double a_func(double x) {
+    return 1;
 }
 
 double *get_factors(matrix_t *);
 
 void make_spl(points_t *pts, spline_t *spl) {
-    int i, j, k;
-    int parts = APPROX_BASE_SIZE;
-    int x_size = pts->n;
+    int default_parts = DEFAULT_PARTS;
 
-    if (parts < x_size)
-        fprintf(stderr, "\tIlość punktów jest większa niż funkcji bazowych - wynik znacząco traci na dokładności");
+    int i, j, k;
+
+    char *env = getenv("APPROX_BASE_SIZE");
+    int parts = env == NULL ? default_parts : atoi(env);
+
+    int x_size = pts->n;
 
     matrix_t *equations = make_matrix(parts, parts + 1);
 
     /*zmienna k odpowiada za rząd - czyli dzięki k zmienia się: POCHODNA.*/
     for (k = 0; k < parts; k++) {
-        double (*derivative)(double, int);
+        double (*derivative)(double);
 
         /*n takie, że derivative=sin/cos(n*x)*/
-        int derN = k / 2 + 1;
+        int derN = (k-1) / 2 + 1;
 
-        /*jeśli k jest nieparzyste, to jesteśmy na sinusie (póki co - później dojdzie jeszcze liczba rzeczywista)*/
-        if (k % 2 == 0) derivative = &diff_sin;
-        else derivative = &diff_cos;
+        if(k == 0) derivative = &a_func;
+        else if (k % 2 == 1) derivative = &sin;
+//        if(k % 2 == 0 ) derivative = &sin;
+        else derivative = &cos;
 
         /*zmienna j odpowiada za kolumnę - czyli zmienia: FUNKCJĘ.*/
         for (j = 0; j < parts + 1; j++) {
@@ -46,28 +43,29 @@ void make_spl(points_t *pts, spline_t *spl) {
             double (*func)(double);
 
             /*n takie, że func=sin/cos(n*x)*/
-            double funcN = j / 2 + 1;
+            double funcN = (j-1) / 2 + 1;
 
-            if (j % 2 == 0) func = &sin;
+            if(j == 0) func = &a_func;
+            else if (j % 2 == 1) func = &sin;
+//            if(j % 2 == 0) func = &sin;
             else func = &cos;
 
             if (j < parts) {
-                //dodajemy pochodną razy wartość funkcji bazowej dla danego x
+                /*dodajemy pochodną razy wartość funkcji bazowej dla danego x*/
                 for (i = 0; i < x_size; i++) {
                     double x = pts->x[i];
 
                     sum += func(x * funcN)
-                           * derivative(x, derN);
+                           * derivative(x * derN);
                 }
             }
             else {
-                //dodajemy pochodną dla x razy wartość y które znamy
-                printf("Pochodna: %s(%dx)\n", k % 2 ? "cos" : "sin", derN);
+                /*dodajemy pochodną dla x razy wartość y które znamy*/
                 for (i = 0; i < x_size; i++) {
                     double x = pts->x[i];
                     double y = pts->y[i];
 
-                    sum += y * derivative(x, derN);
+                    sum += y * derivative(x * derN);
                 }
             }
 
