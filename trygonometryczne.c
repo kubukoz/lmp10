@@ -1,16 +1,94 @@
 #include "makespl.h"
+#include <float.h>
 #include "gaus/matrix.h"
 #include <math.h>
 #include <stdlib.h>
 #include "gaus/piv_ge_solver.h"
 
-#define DEFAULT_PARTS 5;
+#define DEFAULT_PARTS 10;
+
+typedef double (*FUNC_DOUBLE)(double);
+
+int get_n(int i) {
+    return (i - 1) / 2 + 1;
+}
 
 double a_func(double x) {
     return 1;
 }
 
-double *get_factors(matrix_t *);
+FUNC_DOUBLE get_func(int i) {
+    if (i == 0) return a_func;
+    else if (i % 2 == 1) return sin;
+    else return cos;
+}
+
+double f(double *a, int n, double x) {
+    FUNC_DOUBLE func;
+    double value = 0;
+    int i;
+
+    for (i = 0; i < n; i++) {
+        int curr_n = get_n(i);
+        func = get_func(i);
+        value += a[i] * func(x * curr_n);
+    }
+    return value;
+}
+
+double f1(double *a, int n, double x) {
+    FUNC_DOUBLE func;
+    double value = 0;
+    int i;
+
+    /*od i=1, bo wszystkie pochodne ze stałej są zerowe*/
+    for (i = 1; i < n; i++) {
+        int curr_n = get_n(i);
+        /*przejscie funkcji*/
+        func = get_func(i + 1);
+        /*zmiana znaku dla cos*/
+        int sign = i % 2 == 0 ? -1 : 1;
+        value += a[i] * sign * curr_n * func(curr_n * x);
+    }
+    return value;
+}
+
+double f2(double *a, int n, double x) {
+    FUNC_DOUBLE func;
+    double value = 0;
+    int i;
+    for (i = 1; i < n; i++) {
+        int curr_n = get_n(i);
+        func = get_func(i);
+        /*w drugiej pochodnej zmieniamy znaki obu funkcji, stąd -= */
+        value -= a[i] * pow(curr_n, 2) * func(curr_n * x);
+    }
+    return value;
+}
+
+double f3(double *a, int n, double x) {
+    FUNC_DOUBLE func;
+    double value = 0;
+    int i;
+    for (i = 1; i < n; i++) {
+        int curr_n = get_n(i);
+        /*przejscie funkcji*/
+        func = get_func(i + 1);
+        /*zmiana znaku dla sin*/
+        int sign = i % 2 != 0 ? -1 : 1;
+        value += a[i] * sign * pow(curr_n, 3) * func(curr_n * x);
+    }
+    return value;
+}
+
+double *get_factors(matrix_t *mx) {
+    int i;
+    double *results = malloc(mx->rn * sizeof(double));
+    for (i = 0; i < mx->rn; i++) {
+        results[i] = get_entry_matrix(mx, i, mx->cn - 1);
+    }
+    return results;
+}
 
 void make_spl(points_t *pts, spline_t *spl) {
     int default_parts = DEFAULT_PARTS;
@@ -26,29 +104,19 @@ void make_spl(points_t *pts, spline_t *spl) {
 
     /*zmienna k odpowiada za rząd - czyli dzięki k zmienia się: POCHODNA.*/
     for (k = 0; k < parts; k++) {
-        double (*derivative)(double);
+        FUNC_DOUBLE derivative = get_func(k);
 
         /*n takie, że derivative=sin/cos(n*x)*/
-        int derN = (k-1) / 2 + 1;
-
-        if(k == 0) derivative = &a_func;
-        else if (k % 2 == 1) derivative = &sin;
-//        if(k % 2 == 0 ) derivative = &sin;
-        else derivative = &cos;
+        int derN = get_n(k);
 
         /*zmienna j odpowiada za kolumnę - czyli zmienia: FUNKCJĘ.*/
         for (j = 0; j < parts + 1; j++) {
             /*suma w kolumnie*/
             double sum = 0;
-            double (*func)(double);
+            FUNC_DOUBLE func = get_func(j);
 
             /*n takie, że func=sin/cos(n*x)*/
-            double funcN = (j-1) / 2 + 1;
-
-            if(j == 0) func = &a_func;
-            else if (j % 2 == 1) func = &sin;
-//            if(j % 2 == 0) func = &sin;
-            else func = &cos;
+            double funcN = get_n(j);
 
             if (j < parts) {
                 /*dodajemy pochodną razy wartość funkcji bazowej dla danego x*/
@@ -73,33 +141,25 @@ void make_spl(points_t *pts, spline_t *spl) {
         }
     }
 
-    write_matrix(equations, stdout);
-
-    piv_ge_solver(equations);
-
-    write_matrix(equations, stdout);
-    double *factors = get_factors(equations);
-}
-
-double *get_factors(matrix_t *mx) {
-    int i;
-    double *results = malloc(mx->rn * sizeof(double));
-    for (i = 0; i < mx->rn; i++) {
-        results[i] = get_entry_matrix(mx, i, mx->cn - 1);
+    if (piv_ge_solver(equations)) {
+        spl->n = 0;
+        return;
     }
-    return results;
-}
 
+    double *factors = get_factors(equations);
 
-//debugging
-int main(int argc, char *argv[]) {
-    points_t pts;
-    spline_t spl;
-    pts.n = 0;
-    spl.n = 0;
-    FILE *in = fopen("/Users/kubukoz/ClionProjects/lmp10/dane.lel", "r");
-    read_pts_failed(in, &pts);
-    make_spl(&pts, &spl);
+    /*tworzymy spline'y*/
+    alloc_spl(spl, pts->n);
 
-    return 0;
+    double start_x = pts->x[0];
+    double range = pts->x[pts->n - 1] - start_x;
+    double delta = range * 1.0 / (pts->n - 1);
+    for (i = 0; i < pts->n + 1; i++) {
+        double current_x = start_x + delta * i;
+        spl->x[i] = current_x;
+        spl->f[i] = f(factors, parts, current_x);
+        spl->f1[i] = f1(factors, parts, current_x);
+        spl->f2[i] = f2(factors, parts, current_x);
+        spl->f3[i] = f3(factors, parts, current_x);
+    }
 }
