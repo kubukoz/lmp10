@@ -1,5 +1,5 @@
 aprox: main.o splines.o points.o trygonometryczne.o gaus/libge.a
-	$(CC) -o aprox  main.o splines.o points.o trygonometryczne.o -L gaus -l ge
+	$(CC) -o aprox  main.o splines.o points.o trygonometryczne.o -L gaus -l ge -lm
 
 intrp: main.o splines.o points.o interpolator.o gaus/libge.a
 	$(CC) -o intrp  main.o splines.o points.o interpolator.o -L gaus -l ge
