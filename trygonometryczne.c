@@ -147,11 +147,17 @@ void make_spl(points_t *pts, spline_t *spl) {
 
     double *factors = get_factors(equations);
 
+    free(equations->e);
+    free(equations);
+
     /*tworzymy spline'y*/
-    alloc_spl(spl, pts->n);
+    if(alloc_spl(spl, pts->n + 1)){
+        spl->n = 0;
+        return;
+    }
 
     double start_x = pts->x[0];
-    double range = pts->x[pts->n - 1] - start_x;
+    double range = pts->x[x_size - 1] - start_x;
     double delta = range * 1.0 / (pts->n - 1);
     for (i = 0; i < pts->n + 1; i++) {
         double current_x = start_x + delta * i;
@@ -161,4 +167,6 @@ void make_spl(points_t *pts, spline_t *spl) {
         spl->f2[i] = f2(factors, parts, current_x);
         spl->f3[i] = f3(factors, parts, current_x);
     }
+
+    free(factors);
 }

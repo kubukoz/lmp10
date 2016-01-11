@@ -16,7 +16,7 @@ make_matrix (int rn, int cn)
   }
   new_mat->rn = rn;
   new_mat->cn = cn;
-  memset (new_mat->e, 0, (size_t) (rn * (size_t) cn * sizeof *new_mat->e));
+  memset (new_mat->e, 0, (size_t) rn * (size_t) cn * sizeof *new_mat->e);
   return new_mat;
 }
 

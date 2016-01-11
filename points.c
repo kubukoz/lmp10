@@ -1,12 +1,11 @@
 #include "points.h"
 #include <stdlib.h>
-#define MAX_POINTS 1001
 
-static int
+int
 realloc_pts_failed (points_t * pts, int size)
 {
-  return realloc (pts->x, size * sizeof *pts->x) == NULL
-    || realloc (pts->y, size * sizeof *pts->y) == NULL;
+  return (pts->x = realloc (pts->x, size * sizeof *pts->x)) == NULL
+      || (pts->y = realloc(pts->y, size * sizeof *pts->y)) == NULL;
 }
 
 int
@@ -16,28 +15,28 @@ read_pts_failed (FILE * inf, points_t * pts)
   double x, y;
 
   if (pts->n == 0) {
-    pts->x = malloc (MAX_POINTS * sizeof *pts->x);
+    pts->x = malloc (sizeof(double));
     if (pts->x == NULL)
       return 1;
-    pts->y = malloc (MAX_POINTS * sizeof *pts->y);
+    pts->y = malloc (sizeof(double));
     if (pts->y == NULL) {
       free (pts->x);
       return 1;
     }
-    size = MAX_POINTS;
+    size = 1;
   }
   else
-    size = pts->n;
+    size = pts->n + 1;
 
   while (fscanf (inf, "%lf %lf", &x, &y) == 2) {
     pts->x[pts->n] = x;
     pts->y[pts->n] = y;
     pts->n++;
-    if (!feof (inf) && pts->n == size) {
-      if (realloc_pts_failed (pts, 2 * size))
+    if (!feof (inf)) {
+      if (realloc_pts_failed (pts, size + 1))
         return 1;
       else
-        size *= 2;
+        size++;
     }
   }
 

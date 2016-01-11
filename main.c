@@ -128,7 +128,7 @@ main (int argc, char **argv)
   }
 
   /* check if plot was requested and generate it if yes */
-  if (gpt != NULL && n > 1) { 
+  if (gpt != NULL && n > 1) {
     FILE *gpf = fopen (gpt, "w");
     int i;
     double dx;
@@ -159,5 +159,12 @@ main (int argc, char **argv)
     fclose (gpf);
   }
 
+  free(pts.x);
+  free(pts.y);
+  free(spl.x);
+  free(spl.f);
+  free(spl.f1);
+  free(spl.f2);
+  free(spl.f3);
   return 0;
 }

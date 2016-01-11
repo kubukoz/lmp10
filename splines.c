@@ -8,11 +8,11 @@ int
 alloc_spl (spline_t * spl, int n)
 {
   spl->n = n;
-  return MALLOC_FAILED (spl->x, spl->n)
-    || MALLOC_FAILED (spl->f, spl->n)
-    || MALLOC_FAILED (spl->f1, spl->n)
-    || MALLOC_FAILED (spl->f2, spl->n)
-    || MALLOC_FAILED (spl->f3, spl->n);
+  return MALLOC_FAILED (spl->x, n)
+    || MALLOC_FAILED (spl->f, n)
+    || MALLOC_FAILED (spl->f1, n)
+    || MALLOC_FAILED (spl->f2, n)
+    || MALLOC_FAILED (spl->f3, n);
 }
 
 int
