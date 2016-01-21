@@ -123,7 +123,7 @@ void make_spl(points_t *pts, spline_t *spl) {
                     double x = pts->x[i];
 
                     sum += func(x * funcN)
-                           * derivative(x * derN);
+                           * derN * derivative(x * derN);
                 }
             }
             else {
@@ -132,7 +132,7 @@ void make_spl(points_t *pts, spline_t *spl) {
                     double x = pts->x[i];
                     double y = pts->y[i];
 
-                    sum += y * derivative(x * derN);
+                    sum += y * derN * derivative(x * derN);
                 }
             }
 
