@@ -117,6 +117,7 @@ main (int argc, char **argv)
                inp);
       exit (EXIT_FAILURE);
     }
+    fclose(splf);
   } else { /* ponts were not given nor spline was given -> it is an error */
     fprintf (stderr, usage, argv[0]);
     exit (EXIT_FAILURE);
